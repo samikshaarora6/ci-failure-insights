@@ -1,0 +1,31 @@
+name: Flaky Tests Simulation
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  flaky:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          
+      - name: Create flaky test
+        run: |
+          mkdir -p tests
+          echo '
+          import random
+          def test_flaky():
+              # This test has a 50% chance of failing
+              assert random.random() > 0.5, "Flaky test failed"
+          ' > tests/test_flaky.py
+          
+      - name: Run flaky test
+        run: |
+          python -m pytest tests/test_flaky.py -v

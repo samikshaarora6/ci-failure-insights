@@ -1,0 +1,30 @@
+# .github/workflows/test-failure.yml
+name: Test Failure Simulation
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          
+      - name: Create test file
+        run: |
+          mkdir -p tests
+          echo '
+          def test_always_fails():
+              assert False, "This test is designed to fail"
+          ' > tests/test_fail.py
+          
+      - name: Run failing test
+        run: |
+          python -m pytest tests/test_fail.py -v

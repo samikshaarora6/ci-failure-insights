@@ -1,0 +1,16 @@
+name: Timeout Failure Simulation
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  timeout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Simulate timeout
+        run: |
+          # This will run for 2 minutes, causing a timeout
+          sleep 120
