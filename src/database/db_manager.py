@@ -143,6 +143,75 @@ class DatabaseManager:
             ))
             conn.commit()
 
+    def store_analysis_result(self, analysis_type: str, analysis_data: dict):
+        """Store analysis results in the database."""
+        with self.get_connection() as conn:
+            c = conn.cursor()
+            
+            # First, drop the existing table if it exists
+            c.execute('DROP TABLE IF EXISTS analysis_results')
+            
+            # Create the table with the correct schema
+            c.execute('''
+                CREATE TABLE analysis_results (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    analysis_type TEXT NOT NULL,
+                    failure_id TEXT,
+                    analysis_data TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    workflow_name TEXT,
+                    failure_reason TEXT
+                )
+            ''')
+            conn.commit()
+            
+            # Now insert the data
+            try:
+                c.execute('''
+                    INSERT INTO analysis_results 
+                    (analysis_type, failure_id, analysis_data, timestamp, workflow_name, failure_reason)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    analysis_type,
+                    analysis_data.get('failure_id'),
+                    json.dumps(analysis_data),
+                    analysis_data.get('timestamp', datetime.now().isoformat()),
+                    analysis_data.get('workflow_name'),
+                    analysis_data.get('failure_reason')
+                ))
+                conn.commit()
+            except sqlite3.OperationalError as e:
+                print(f"Error storing analysis result: {str(e)}")
+                # If there's an error, try to recreate the table and insert again
+                c.execute('DROP TABLE IF EXISTS analysis_results')
+                c.execute('''
+                    CREATE TABLE analysis_results (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        analysis_type TEXT NOT NULL,
+                        failure_id TEXT,
+                        analysis_data TEXT NOT NULL,
+                        timestamp TEXT NOT NULL,
+                        workflow_name TEXT,
+                        failure_reason TEXT
+                    )
+                ''')
+                conn.commit()
+                
+                # Try the insert again
+                c.execute('''
+                    INSERT INTO analysis_results 
+                    (analysis_type, failure_id, analysis_data, timestamp, workflow_name, failure_reason)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    analysis_type,
+                    analysis_data.get('failure_id'),
+                    json.dumps(analysis_data),
+                    analysis_data.get('timestamp', datetime.now().isoformat()),
+                    analysis_data.get('workflow_name'),
+                    analysis_data.get('failure_reason')
+                ))
+                conn.commit()
+
     def dict_factory(self, cursor, row):
         """Convert database row to dictionary."""
         d = {}
